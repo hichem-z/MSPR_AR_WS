@@ -1,5 +1,7 @@
 package fr.group.mspr_ar_ws.security;
 
+import fr.group.mspr_ar_ws.models.Role;
+import fr.group.mspr_ar_ws.models.User;
 import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +12,9 @@ import org.springframework.stereotype.Component;
 import fr.group.mspr_ar_ws.services.MsprUserDetailsImpl;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class MsprJwtUtils {
@@ -21,14 +26,14 @@ public class MsprJwtUtils {
     @Value("${app.jwtExpirationMs}")
     private int jwtExpirationMs;
 
-    public String generateJwtToken(Authentication authentication) {
+    public String generateJwtToken(User user) {
 
-        MsprUserDetailsImpl userPrincipal = (MsprUserDetailsImpl) authentication.getPrincipal();
-
+        Map<String,Object> claims = new HashMap<>();
+        for (Role role : user.getRoles()) claims.put("Role",role.getName().name());
         return Jwts.builder()
-                .setSubject((userPrincipal.getUsername()))
+                .setSubject((user.getUsername()))
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .addClaims(claims)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
     }

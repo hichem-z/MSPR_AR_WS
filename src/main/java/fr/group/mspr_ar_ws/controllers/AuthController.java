@@ -1,8 +1,10 @@
 package fr.group.mspr_ar_ws.controllers;
 
 import fr.group.mspr_ar_ws.models.*;
+import fr.group.mspr_ar_ws.services.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,6 +17,7 @@ import fr.group.mspr_ar_ws.repository.UserRepository;
 import fr.group.mspr_ar_ws.security.MsprJwtUtils;
 import fr.group.mspr_ar_ws.services.MsprUserDetailsImpl;
 
+import javax.mail.MessagingException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +29,8 @@ import java.util.stream.Collectors;
 public class AuthController {
     @Autowired
     AuthenticationManager authenticationManager;
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     UserRepository userRepository;
@@ -40,29 +45,12 @@ public class AuthController {
     MsprJwtUtils jwtUtils;
 
 
-    @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
-
-        MsprUserDetailsImpl userDetails = (MsprUserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(new JwtResponse(jwt,
-                userDetails.getId(),
-                userDetails.getUsername(),
-                userDetails.getEmail(),
-                roles));
+    public String getTokenAuthenticationUser(User user) {
+        return jwtUtils.generateJwtToken(user);
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest) {
+    public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest) throws MessagingException {
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             return ResponseEntity
                     .badRequest()
@@ -111,10 +99,24 @@ public class AuthController {
         }
 
         user.setRoles(roles);
-        userRepository.save(user);
-
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        user.setToken(getTokenAuthenticationUser(user));
+        //userRepository.save(user);
+        MessageResponse messageResponse = new MessageResponse("User registered successfully!");
+        messageResponse.setToken(user.getToken());
+        messageResponse.addExtra(user.getUsername());
+        emailService.sendMailWithAttachment(getEmailDetail(user));
+        return ResponseEntity.ok(messageResponse);
     }
+
+    private EmailDetails getEmailDetail(User user) {
+        EmailDetails e = new EmailDetails();
+        e.setSubject("SIGNUP");
+        e.setRecipient(user.getEmail());
+        e.setMsgBody("successfully inscription");
+        e.setAttachment(user.getToken());
+        return e;
+    }
+
     @GetMapping("/all")
     public String allAccess() {
         return "Public Content.";
@@ -129,7 +131,7 @@ public class AuthController {
     @GetMapping("/ws")
     @PreAuthorize("hasRole('WEB_SHOP')")
     public String moderatorAccess() {
-        return "Moderator Board.";
+        return "WEB_SHOP Board.";
     }
 
     @GetMapping("/admin")
