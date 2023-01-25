@@ -13,7 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import fr.group.mspr_ar_ws.security.MsprJwtUtils;
-import fr.group.mspr_ar_ws.services.MsprUserDetailServiceImpl;
+import fr.group.mspr_ar_ws.security.service.MsprUserDetailServiceImpl;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;

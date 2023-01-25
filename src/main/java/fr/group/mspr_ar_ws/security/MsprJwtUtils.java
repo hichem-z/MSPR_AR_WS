@@ -6,15 +6,11 @@ import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-import fr.group.mspr_ar_ws.services.MsprUserDetailsImpl;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 public class MsprJwtUtils {

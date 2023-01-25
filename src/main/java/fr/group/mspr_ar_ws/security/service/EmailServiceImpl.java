@@ -1,4 +1,4 @@
-package fr.group.mspr_ar_ws.services;
+package fr.group.mspr_ar_ws.security.service;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;

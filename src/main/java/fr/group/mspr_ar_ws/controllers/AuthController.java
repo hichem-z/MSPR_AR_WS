@@ -4,7 +4,7 @@ import fr.group.mspr_ar_ws.models.*;
 import fr.group.mspr_ar_ws.security.beans.EmailDetails;
 import fr.group.mspr_ar_ws.security.beans.SignupResponse;
 import fr.group.mspr_ar_ws.security.beans.SignupRequest;
-import fr.group.mspr_ar_ws.services.EmailService;
+import fr.group.mspr_ar_ws.security.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
