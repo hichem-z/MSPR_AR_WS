@@ -1,27 +1,23 @@
 package fr.group.mspr_ar_ws.controllers;
 
 import fr.group.mspr_ar_ws.models.*;
+import fr.group.mspr_ar_ws.security.beans.EmailDetails;
+import fr.group.mspr_ar_ws.security.beans.SignupResponse;
+import fr.group.mspr_ar_ws.security.beans.SignupRequest;
 import fr.group.mspr_ar_ws.services.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import fr.group.mspr_ar_ws.repository.RoleRepository;
 import fr.group.mspr_ar_ws.repository.UserRepository;
 import fr.group.mspr_ar_ws.security.MsprJwtUtils;
-import fr.group.mspr_ar_ws.services.MsprUserDetailsImpl;
 
 import javax.mail.MessagingException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -54,13 +50,13 @@ public class AuthController {
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Username is already taken!"));
+                    .body(new SignupResponse("Error: Username is already taken!"));
         }
 
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Email is already in use!"));
+                    .body(new SignupResponse("Error: Email is already in use!"));
         }
 
         // Create new user's account
@@ -100,8 +96,8 @@ public class AuthController {
 
         user.setRoles(roles);
         user.setToken(getTokenAuthenticationUser(user));
-        //userRepository.save(user);
-        MessageResponse messageResponse = new MessageResponse("User registered successfully!");
+        userRepository.save(user);
+        SignupResponse messageResponse = new SignupResponse("User registered successfully!");
         messageResponse.setToken(user.getToken());
         messageResponse.addExtra(user.getUsername());
         emailService.sendMailWithAttachment(getEmailDetail(user));

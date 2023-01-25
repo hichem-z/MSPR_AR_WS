@@ -1,15 +1,15 @@
-package fr.group.mspr_ar_ws.models;
+package fr.group.mspr_ar_ws.security.beans;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MessageResponse {
+public class SignupResponse {
     private String message;
     private String token;
 
     private List<String> extras = new ArrayList<>();
 
-    public MessageResponse(String message) {
+    public SignupResponse(String message) {
         this.message = message;
     }
 

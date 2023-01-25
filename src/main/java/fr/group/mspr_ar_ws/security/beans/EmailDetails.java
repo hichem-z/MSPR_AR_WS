@@ -1,4 +1,4 @@
-package fr.group.mspr_ar_ws.models;
+package fr.group.mspr_ar_ws.security.beans;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

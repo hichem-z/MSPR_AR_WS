@@ -23,8 +23,6 @@ import javax.servlet.Filter;
 
 @Configuration
 @EnableGlobalMethodSecurity(
-        // securedEnabled = true,
-        // jsr250Enabled = true,
         prePostEnabled = true)
 public class SecurityConfig {
 
@@ -43,7 +41,6 @@ public class SecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(msprJwtAuthentication).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeRequests().antMatchers("/api/auth/**").permitAll()
-                .antMatchers("/api/test/**").permitAll()
                 .anyRequest().authenticated();
         http.authenticationProvider(authenticationProvider());
 
