@@ -1,14 +1,20 @@
 package fr.group.mspr_ar_ws.controllers;
 
+import com.sun.net.httpserver.Headers;
 import fr.group.mspr_ar_ws.models.*;
 import fr.group.mspr_ar_ws.security.beans.EmailDetails;
 import fr.group.mspr_ar_ws.security.beans.SignupResponse;
 import fr.group.mspr_ar_ws.security.beans.SignupRequest;
 import fr.group.mspr_ar_ws.security.service.EmailService;
+import fr.group.mspr_ar_ws.security.service.UserService;
+import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.web.servlet.headers.HeadersSecurityMarker;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import fr.group.mspr_ar_ws.repository.RoleRepository;
@@ -26,9 +32,6 @@ public class AuthController {
     @Autowired
     AuthenticationManager authenticationManager;
     @Autowired
-    private EmailService emailService;
-
-    @Autowired
     UserRepository userRepository;
 
     @Autowired
@@ -39,6 +42,8 @@ public class AuthController {
 
     @Autowired
     MsprJwtUtils jwtUtils;
+    @Autowired
+    UserService userService;
 
 
     public String getTokenAuthenticationUser(User user) {
@@ -59,7 +64,6 @@ public class AuthController {
                     .body(new SignupResponse("Error: Email is already in use!"));
         }
 
-        // Create new user's account
         User user = new User(signUpRequest.getUsername(),
                 signUpRequest.getEmail(),
                 encoder.encode(signUpRequest.getPassword()));
@@ -96,43 +100,38 @@ public class AuthController {
 
         user.setRoles(roles);
         user.setToken(getTokenAuthenticationUser(user));
-        userRepository.save(user);
-        SignupResponse messageResponse = new SignupResponse("User registered successfully!");
-        messageResponse.setToken(user.getToken());
-        messageResponse.addExtra(user.getUsername());
-        emailService.sendMailWithAttachment(getEmailDetail(user));
-        return ResponseEntity.ok(messageResponse);
+        SignupResponse signupResponse = new SignupResponse("User registered successfully!");
+        if(userService.saveAndSendMail(user) != null){
+            signupResponse.setToken(user.getToken());
+            signupResponse.addExtra(user.getUsername());
+        }else {
+            signupResponse.setMessage("User registration failed!");
+            signupResponse.setToken(null);
+        }
+        return ResponseEntity.ok(signupResponse);
+
     }
 
-    private EmailDetails getEmailDetail(User user) {
-        EmailDetails e = new EmailDetails();
-        e.setSubject("SIGNUP");
-        e.setRecipient(user.getEmail());
-        e.setMsgBody("successfully inscription");
-        e.setAttachment(user.getToken());
-        return e;
-    }
 
-    @GetMapping("/all")
-    public String allAccess() {
-        return "Public Content.";
+    @GetMapping("/retailer/login")
+    @PreAuthorize("hasRole('RETAILER')")
+    public ResponseEntity<?> retailerAccess(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        return checkAccess(token);
     }
-
-    @GetMapping("/user")
-    @PreAuthorize("hasRole('WEB_SHOP') or hasRole('RETAILER') or hasRole('ADMIN')")
-    public String userAccess() {
-        return "User Content.";
-    }
-
-    @GetMapping("/ws")
+    @GetMapping("/webshop/login")
     @PreAuthorize("hasRole('WEB_SHOP')")
-    public String moderatorAccess() {
-        return "WEB_SHOP Board.";
+    public ResponseEntity<?> webShopAccess(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        return checkAccess(token);
     }
 
-    @GetMapping("/admin")
+    @GetMapping("/admin/login")
     @PreAuthorize("hasRole('ADMIN')")
-    public String adminAccess() {
-        return "Admin Board.";
+    public ResponseEntity<?> adminAccess(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        return checkAccess(token);
+    }
+    private ResponseEntity<?> checkAccess(String token) {
+        if (userService.doesUserExists(token.substring(7))){
+            return new ResponseEntity<>(HttpStatus.OK);
+        }else return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
 }

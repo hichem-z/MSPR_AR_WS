@@ -7,6 +7,8 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import fr.group.mspr_ar_ws.security.beans.EmailDetails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -20,6 +22,8 @@ import java.io.*;
 
 @Service
 public class EmailServiceImpl implements EmailService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
 
     @Autowired
     private JavaMailSender emailSender;
@@ -54,19 +58,15 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(emailDetails.getRecipient());
             helper.setSubject(emailDetails.getSubject());
             helper.setText(emailDetails.getMsgBody());
-            File outputFile = new File("outputFile.jpg");
+            File outputFile = new File("qrCode.jpg");
             try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
                 outputStream.write(getQRCodeImage(emailDetails.getAttachment(), 500, 500)
                 );
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (WriterException e) {
-                throw new RuntimeException(e);
+            } catch (WriterException | IOException e) {
+                logger.warn("Error occurred when sending mail "+e.getMessage());
             }
 
-            helper.addAttachment("Invoice", outputFile);
+            helper.addAttachment("PayeTonKawa", outputFile);
 
             emailSender.send(message);
             return "Email send successfully";
@@ -74,16 +74,6 @@ public class EmailServiceImpl implements EmailService {
             return "Error while Sending Mail";
         }
     }
-    /*public static void generateQRCodeImage(String text, int width, int height, String filePath)
-            throws WriterException, IOException {
-        QRCodeWriter qrCodeWriter = new QRCodeWriter();
-        BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, width, height);
-
-        Path path = FileSystems.getDefault().getPath(filePath);
-        MatrixToImageWriter.writeToPath(bitMatrix, "PNG", path);
-
-    }*/
-
 
     public static byte[] getQRCodeImage(String text, int width, int height) throws WriterException, IOException {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
