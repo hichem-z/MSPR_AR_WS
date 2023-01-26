@@ -119,7 +119,7 @@ public class AuthController {
     }
 
     @GetMapping("/user")
-    @PreAuthorize("hasRole('USER') or hasRole('RETAILER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('WEB_SHOP') or hasRole('RETAILER') or hasRole('ADMIN')")
     public String userAccess() {
         return "User Content.";
     }

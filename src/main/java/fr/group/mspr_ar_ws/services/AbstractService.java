@@ -1,7 +1,8 @@
 package fr.group.mspr_ar_ws.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.group.mspr_ar_ws.models.Customer;
 import fr.group.mspr_ar_ws.security.MsprJwtUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -13,15 +14,13 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class AbstractService {
+public abstract class AbstractService<T> {
     protected static final Logger logger = LoggerFactory.getLogger(MsprJwtUtils.class);
 
     @Value("${app.baseUrl}")
@@ -37,17 +36,26 @@ public abstract class AbstractService {
             return null;
         }
     }
-    protected List<?> getResponse(String path,Class c) throws IOException {
+    protected T getObject(String path, Class<T> c) throws IOException {
         HttpGet httpGet = new HttpGet(baseUrl+path);
         ResponseHandler<String> response = CustomerService::handleResponse;
         String json = getClosable().execute(httpGet,response);
         if (json!=null) {
             ObjectMapper o = new ObjectMapper();
-            return Collections.singletonList(o.readValue(json, c));
+            return o.readValue(json, c);
         }
         return null;
     }
-
+    protected List<T> getList(String path, Class<T[]> c) throws IOException {
+        HttpGet httpGet = new HttpGet(baseUrl+path);
+        ResponseHandler<String> response = CustomerService::handleResponse;
+        String json = getClosable().execute(httpGet,response);
+        if (json!=null) {
+            ObjectMapper o = new ObjectMapper();
+            return List.of(o.readValue(json, c));
+        }
+        return null;
+    }
     protected CloseableHttpClient getClosable(){
         return HttpClients.createDefault();
     }
